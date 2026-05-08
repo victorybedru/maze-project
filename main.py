@@ -2,30 +2,34 @@ import pygame
 import sys
 import random
 
+# -------------------
 # SETTINGS
-WIDTH = 900
-HEIGHT = 900
-ROWS = 20
-COLS = 20
+# -------------------
+WIDTH, HEIGHT = 900, 900
+ROWS, COLS = 20, 20
 CELL_SIZE = WIDTH // COLS
 FPS = 60
 
+# COLORS
 BLACK = (15, 15, 15)
 WHITE = (255, 255, 255)
-GRAY = (40, 40, 40)
-RED = (255, 60, 60)
 GREEN = (0, 255, 120)
+RED = (255, 60, 60)
 BLUE = (70, 130, 255)
+GRAY = (40, 40, 40)
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("Maze Generator + Solver")
 clock = pygame.time.Clock()
 
-# CELL
+# -------------------
+# CELL CLASS
+# -------------------
 class Cell:
-    def __init__(self, r, c):
-        self.row = r
-        self.col = c
+    def __init__(self, row, col):
+        self.row = row
+        self.col = col
         self.visited = False
         self.solved = False
         self.dead_end = False
@@ -59,13 +63,17 @@ class Cell:
         if self.walls["left"]:
             pygame.draw.line(screen, WHITE, (x, y), (x, y + CELL_SIZE), 2)
 
+# -------------------
 # GRID
+# -------------------
 grid = [[Cell(r, c) for c in range(COLS)] for r in range(ROWS)]
 
-# MAZE GENERATION HELPERS
+# -------------------
+# HELPERS (MAZE GEN)
+# -------------------
 def get_neighbors(cell):
-    neighbors = []
     r, c = cell.row, cell.col
+    neighbors = []
 
     directions = [(-1,0),(1,0),(0,-1),(0,1)]
 
@@ -89,38 +97,47 @@ def remove_walls(a, b):
     elif dx == -1:
         a.walls["right"] = False
         b.walls["left"] = False
-
-    if dy == 1:
+    elif dy == 1:
         a.walls["top"] = False
         b.walls["bottom"] = False
     elif dy == -1:
         a.walls["bottom"] = False
         b.walls["top"] = False
 
-# MAZE GENERATION STATE
+    # ---------------- BONUS: random cycle creation ----------------
+    if random.randint(1, 20) == 1:
+        # randomly break a wall anyway (creates loops)
+        a.walls["top"] = a.walls["top"] and False or False
+
+# -------------------
+# MAZE GENERATION
+# -------------------
 stack = []
 current = grid[0][0]
 current.visited = True
 
 maze_done = False
 
-# START / END (COMMIT 5)
-start_cell = grid[0][0]
-end_cell = grid[ROWS-1][COLS-1]
-
-start_cell.walls["left"] = False
-end_cell.walls["right"] = False
-
-# SOLVER STATE (assumed from commit 4)
+# -------------------
+# SOLVER
+# -------------------
 solve_stack = []
 visited_solver = set()
+
 solver_current = None
 solver_started = False
 solver_done = False
 
+start_cell = grid[0][0]
+end_cell = grid[ROWS - 1][COLS - 1]
+
+start_cell.walls["left"] = False
+end_cell.walls["right"] = False
+
+
 def get_moves(cell):
-    moves = []
     r, c = cell.row, cell.col
+    moves = []
 
     if not cell.walls["top"] and r > 0:
         moves.append(grid[r-1][c])
@@ -131,33 +148,28 @@ def get_moves(cell):
     if not cell.walls["right"] and c < COLS-1:
         moves.append(grid[r][c+1])
 
-    valid = []
-    for m in moves:
-        if (m.row, m.col) not in visited_solver:
-            valid.append(m)
+    return [m for m in moves if (m.row, m.col) not in visited_solver]
 
-    return valid
 
+# -------------------
 # MAIN LOOP
+# -------------------
 while True:
     clock.tick(FPS)
+    screen.fill(BLACK)
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
 
-    screen.fill(BLACK)
-
+    # draw grid
     for row in grid:
         for cell in row:
             cell.draw()
 
-    # -------------------------
     # MAZE GENERATION
-    # -------------------------
     if not maze_done:
-
         neighbors = get_neighbors(current)
 
         if neighbors:
@@ -166,17 +178,11 @@ while True:
 
             remove_walls(current, nxt)
 
-            # BONUS (COMMIT 6)
-            if random.randint(1, 20) == 1:
-                # extra random wall break for cycles
-                pass
-
             current = nxt
             current.visited = True
 
         elif stack:
             current = stack.pop()
-
         else:
             maze_done = True
 
@@ -184,25 +190,19 @@ while True:
                 for cell in row:
                     cell.visited = False
 
-    # -------------------------
     # SOLVER INIT
-    # -------------------------
     elif not solver_started:
         solver_current = start_cell
         solve_stack.append(solver_current)
         visited_solver.add((solver_current.row, solver_current.col))
         solver_started = True
 
-    # -------------------------
-    # SOLVER
-    # -------------------------
+    # SOLVING
     elif not solver_done:
-
         solver_current.solved = True
 
         if solver_current == end_cell:
             solver_done = True
-
         else:
             moves = get_moves(solver_current)
 
@@ -211,7 +211,6 @@ while True:
                 solve_stack.append(nxt)
                 visited_solver.add((nxt.row, nxt.col))
                 solver_current = nxt
-
             else:
                 solver_current.dead_end = True
                 solve_stack.pop()
@@ -219,9 +218,7 @@ while True:
                 if solve_stack:
                     solver_current = solve_stack[-1]
 
-    # -------------------------
-    # DRAW SOLVER MOUSE
-    # -------------------------
+    # DRAW MOUSE
     if solver_started and not solver_done:
         x = solver_current.col * CELL_SIZE + CELL_SIZE // 2
         y = solver_current.row * CELL_SIZE + CELL_SIZE // 2
