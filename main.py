@@ -2,9 +2,7 @@ import pygame
 import sys
 import random
 
-# -------------------
 # SETTINGS
-# -------------------
 WIDTH, HEIGHT = 900, 900
 ROWS, COLS = 20, 20
 CELL_SIZE = WIDTH // COLS
@@ -23,9 +21,7 @@ screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Maze Generator + Solver")
 clock = pygame.time.Clock()
 
-# -------------------
 # CELL CLASS
-# -------------------
 class Cell:
     def __init__(self, row, col):
         self.row = row
@@ -63,14 +59,10 @@ class Cell:
         if self.walls["left"]:
             pygame.draw.line(screen, WHITE, (x, y), (x, y + CELL_SIZE), 2)
 
-# -------------------
 # GRID
-# -------------------
 grid = [[Cell(r, c) for c in range(COLS)] for r in range(ROWS)]
 
-# -------------------
 # HELPERS (MAZE GEN)
-# -------------------
 def get_neighbors(cell):
     r, c = cell.row, cell.col
     neighbors = []
@@ -109,18 +101,14 @@ def remove_walls(a, b):
         # randomly break a wall anyway (creates loops)
         a.walls["top"] = a.walls["top"] and False or False
 
-# -------------------
 # MAZE GENERATION
-# -------------------
 stack = []
 current = grid[0][0]
 current.visited = True
 
 maze_done = False
 
-# -------------------
 # SOLVER
-# -------------------
 solve_stack = []
 visited_solver = set()
 
@@ -151,9 +139,7 @@ def get_moves(cell):
     return [m for m in moves if (m.row, m.col) not in visited_solver]
 
 
-# -------------------
 # MAIN LOOP
-# -------------------
 while True:
     clock.tick(FPS)
     screen.fill(BLACK)
