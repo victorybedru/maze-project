@@ -121,5 +121,8 @@ while True:
 
         else:
             maze_done = True
+            for row in grid:
+                for cell in row:
+                    cell.visited = False
 
     pygame.display.update()
