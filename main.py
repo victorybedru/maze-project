@@ -96,7 +96,7 @@ def remove_walls(a, b):
         a.walls["bottom"] = False
         b.walls["top"] = False
 
-    # ---------------- BONUS: random cycle creation ----------------
+    # Random cycle creation
     if random.randint(1, 20) == 1:
         # randomly break a wall anyway (creates loops)
         a.walls["top"] = a.walls["top"] and False or False
